@@ -10,9 +10,10 @@ public class UDPSocket
     {
         InetAddress IPAddress = InetAddress.getLocalHost();
         int port = 50500;
-        int packetSize = 65500;
+        int packetSize = 1024;
         Path pathToFile = Paths.get(args[1]);
         System.out.println(pathToFile.toAbsolutePath());
+        
         switch (args[0])
         {
             case "R":

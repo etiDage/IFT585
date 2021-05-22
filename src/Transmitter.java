@@ -9,7 +9,7 @@ import java.util.Arrays;
 
 public class Transmitter
 {
-    byte[] sendData = new byte[65514];
+    byte[] sendData = new byte[1024];
     DatagramSocket clientSocket;
     int packetSize;
     InetAddress IPAddress;
@@ -20,20 +20,22 @@ public class Transmitter
         this.IPAddress = IPAddress;
     }
     
-    void transmitFile(int port, File file) throws IOException
+    void transmitFile(int port, File file) throws IOException, InterruptedException
     {
         byte[] fileContent = Files.readAllBytes(file.toPath());
-        System.out.println(fileContent);
-        int packetNb = (int) (file.length()/65514);
+        int packetNb = (int) (file.length()/packetSize);
         if(packetNb < 1)
             packetNb = 1;
         System.out.println(packetNb);
         for(int i = 0; i < packetNb; i++)
         {
-            byte[] packet = Arrays.copyOfRange(fileContent, i*packetSize, i+1*packetSize);
-            System.out.println(packet);
+            int start = i*packetSize;
+            int end = start + packetSize;
+            byte[] packet = Arrays.copyOfRange(fileContent, start, end);
             DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, IPAddress, port);
             clientSocket.send(sendPacket);
+            System.out.println("Sending packet "+ i);
+            Thread.sleep(0,500);         
         }
         clientSocket.close();
     }
