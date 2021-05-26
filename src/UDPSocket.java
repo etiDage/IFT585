@@ -10,6 +10,7 @@ public class UDPSocket
     {
         InetAddress IPAddress = InetAddress.getLocalHost();
         int port = 50500;
+        int ackPort = 50501;
         int packetSize = 1024;
         Path pathToFile = Paths.get(args[1]);
         System.out.println(pathToFile.toAbsolutePath());
@@ -18,7 +19,7 @@ public class UDPSocket
         {
             case "R":
                 File result = new File(args[1]);
-                Receiver receiver = new Receiver(port, packetSize);
+                Receiver receiver = new Receiver(port, packetSize, ackPort);
                 receiver.ReceiveFile(result);
                 /*byte[] receiveData = new byte[1024];
                 DatagramSocket serverSocket = new DatagramSocket(50500);
@@ -29,11 +30,12 @@ public class UDPSocket
                 System.out.println("FROM SERVER: " + modifiedSentence);
                 serverSocket.close();
                 break;*/
+                break;
             case "T":
                 File input = new File(args[1]);
 
                 Transmitter transmitter = new Transmitter(packetSize, IPAddress);
-                transmitter.transmitFile(port, input);
+                transmitter.transmitFile(port, input, ackPort);
                 /*DatagramSocket clientSocket = new DatagramSocket();
                 byte[] sendData = new byte[1024];
                 System.out.println("TransmitMode");
@@ -43,6 +45,7 @@ public class UDPSocket
                 clientSocket.send(sendPacket);
                 clientSocket.close();
                 break;*/
+                break;
         }
     }
 

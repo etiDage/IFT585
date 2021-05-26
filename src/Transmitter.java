@@ -11,11 +11,14 @@ public class Transmitter
 {
     byte[] sendData = new byte[1024];
     DatagramSocket clientSocket;
+    DatagramSocket ackSocket;
     int packetSize;
     InetAddress IPAddress;
-    Transmitter(int packetSize, InetAddress IPAddress) throws SocketException
+    Transmitter(int packetSize, InetAddress IPAddress, int ackPort) throws SocketException
     {
         clientSocket = new DatagramSocket(); 
+        ackSocket = new DatagramSocket(ackPort);
+
         this.packetSize = packetSize;
         this.IPAddress = IPAddress;
     }
@@ -32,10 +35,10 @@ public class Transmitter
             int start = i*packetSize;
             int end = start + packetSize;
             byte[] packet = Arrays.copyOfRange(fileContent, start, end);
-            DatagramPacket sendPacket = new DatagramPacket(packet, packet.length, IPAddress, port);
+            DatagramPacket sendPacket = new DatagramPacket(packet, i, packet.length, IPAddress, port);
             clientSocket.send(sendPacket);
             System.out.println("Sending packet "+ i);
-            Thread.sleep(0,500);         
+            Thread.sleep(0,100);         
         }
         clientSocket.close();
     }
