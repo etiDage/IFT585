@@ -29,41 +29,47 @@ public class Receiver
     void ReceiveFile(File result) throws IOException, InterruptedException
     {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-        serverSocket.setSoTimeout(5000);
         boolean timedOut = false;
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         int lastPacket = -1;
-        while(!timedOut) 
+        int nbPacket = receiveNumberOfPacket();
+        System.out.println("nb of packet to receive: " + nbPacket);
+        while(lastPacket != nbPacket) 
         {
             byte[] data = new byte[packetSize];
             byte[] packetContent = new byte[packetSize - 4];
             timedOut = false;
             int packetNb = -1;
-            try {
-                //Thread.sleep(5000);
-                serverSocket.receive(receivePacket);
-                
-                data = receivePacket.getData();
-                packetNb = getNbPacketFromData(data);
-                if(packetNb == lastPacket + 1)
-                	lastPacket = packetNb;
-                System.out.println(lastPacket);
-                SendAck(lastPacket);
-                packetContent = getPacketContentFromData(data);
-                outputStream.write(packetContent);
-            }
+            serverSocket.receive(receivePacket);
             
-            catch (SocketTimeoutException e) {
-                timedOut = true;
-            }
-            if(!timedOut)
+            data = receivePacket.getData();
+            packetNb = getNbPacketFromData(data);
+            
+            if(packetNb == lastPacket + 1)
             {
-                System.out.println("receiving packet "+ packetNb);
+            	lastPacket = packetNb;
+	            System.out.println("receiving packet "+ packetNb);
+	            packetContent = getPacketContentFromData(data);
+	            outputStream.write(packetContent);
             }
+            SendAck(lastPacket);
+
+
         }
         byte[] filecontent = outputStream.toByteArray();
         Files.write(result.toPath(), filecontent);
         serverSocket.close();
+    }
+    
+    int receiveNumberOfPacket() throws IOException
+    {
+    	DatagramPacket receivePacket = new DatagramPacket(new byte[4], 4);
+    	serverSocket.receive(receivePacket);
+    	int nbPacket = getNbPacketFromData(receivePacket.getData());
+    	DatagramPacket sendPacket = new DatagramPacket(receivePacket.getData(), 
+    			receivePacket.getLength(), IPAddress, ackPort);
+    	ackClientSocket.send(sendPacket);
+    	return nbPacket - 1;
     }
     
     void SendAck(int numPacket) throws IOException

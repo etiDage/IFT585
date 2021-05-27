@@ -18,7 +18,7 @@ public class Transmitter
     DatagramSocket ackSocket;
     int packetSize;
     InetAddress IPAddress;
-    int errorPacket = -1;
+    int errorPacket = 0;
     int window = 6;
     File file;
     byte[] fileContent;
@@ -40,11 +40,17 @@ public class Transmitter
         if(packetNb < 1)
             packetNb = 1;
         int currentWindow = 0;
-        for(int i = 0; i < packetNb; i++)
+        sendNumberOfPacket(packetNb, port);
+        System.out.println("Numbre of packet to send: " + packetNb);
+        int lastReadAck = -1;
+        int i = 0;
+        
+        while(lastReadAck != packetNb - 1)
         {
-        	if(currentWindow >= window)
+        	if(currentWindow >= window || i >= packetNb)
         	{
-        		if(!readAck())
+        		lastReadAck = readAck();
+        		if(lastReadAck == -1)
         		{
         			i= errorPacket;
         			currentWindow = 0;
@@ -54,10 +60,13 @@ public class Transmitter
             		currentWindow--;
         		}
         	}
-        	sendPacket(i, port);
-            currentWindow++;
+        	if(i < packetNb)
+        	{
+            	sendPacket(i, port);
+                currentWindow++;
+        	}
+        	i++;
         }
-        
         clientSocket.close();
     }
     
@@ -70,6 +79,7 @@ public class Transmitter
         {
         	end = fileContent.length;
         }
+        System.out.println("Start: " + start + " End: " + end);
         byte[] packet = Arrays.copyOfRange(fileContent, start, end);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(numPacket);
@@ -80,7 +90,28 @@ public class Transmitter
         System.out.println("Sending packet "+ i);
     }
     
-    boolean readAck() throws IOException
+    void sendNumberOfPacket(int nbPacket, int port) throws IOException
+    {
+    	int receivedNb = -1;
+    	boolean timeout = false;
+        ackSocket.setSoTimeout(500);
+    	while(receivedNb != nbPacket)
+    	{
+        	byte[] numberOfPacket = intToBytes(nbPacket);
+            DatagramPacket sendPacket = new DatagramPacket(numberOfPacket, numberOfPacket.length, IPAddress, port);
+            clientSocket.send(sendPacket);
+            DatagramPacket receivePacket = new DatagramPacket(new byte[numberOfPacket.length], numberOfPacket.length);
+            try {
+            	ackSocket.receive(receivePacket);
+            	receivedNb = getAckNumberFromData(receivePacket.getData());
+            	System.out.println("Received number: " + receivedNb);
+            }catch(SocketTimeoutException e)  {
+            	
+            }
+    	}
+    }
+    
+    int readAck() throws IOException
     {
     	ackSocket.setSoTimeout(500);
     	int lastAck = -1;
@@ -92,14 +123,14 @@ public class Transmitter
         	if(numAck == lastAck)
         	{
         		errorPacket = numAck + 1;
-        		return false;
+        		return -1;
         	}
         	lastAck = numAck;
         	System.out.println("Ack" + numAck + " received." );
     	}catch(SocketTimeoutException e){
-    		return false;
+    		return -1;
     	}
-    	return true;
+    	return lastAck;
 	}
     
     private byte[] intToBytes(int i)

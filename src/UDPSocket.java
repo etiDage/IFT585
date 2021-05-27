@@ -8,7 +8,12 @@ public class UDPSocket
 
     public static void main(String[] args) throws Exception
     {
-        InetAddress IPAddress = InetAddress.getLocalHost();
+    	byte[] ipAddr = new byte[4];
+    	ipAddr[0] = (byte)192;
+    	ipAddr[1] = (byte)168;
+    	ipAddr[2] = (byte)1;
+    	ipAddr[3] = (byte)114;
+        InetAddress IPAddress = InetAddress.getByAddress(ipAddr);
         int port = 50500;
         int ackPort = 50501;
         int packetSize = 1024;
