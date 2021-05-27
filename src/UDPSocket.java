@@ -19,7 +19,7 @@ public class UDPSocket
         {
             case "R":
                 File result = new File(args[1]);
-                Receiver receiver = new Receiver(port, packetSize, ackPort);
+                Receiver receiver = new Receiver(port, IPAddress, packetSize, ackPort);
                 receiver.ReceiveFile(result);
                 /*byte[] receiveData = new byte[1024];
                 DatagramSocket serverSocket = new DatagramSocket(50500);
@@ -34,8 +34,8 @@ public class UDPSocket
             case "T":
                 File input = new File(args[1]);
 
-                Transmitter transmitter = new Transmitter(packetSize, IPAddress);
-                transmitter.transmitFile(port, input, ackPort);
+                Transmitter transmitter = new Transmitter(packetSize, IPAddress, ackPort, input);
+                transmitter.transmitFile(port);
                 /*DatagramSocket clientSocket = new DatagramSocket();
                 byte[] sendData = new byte[1024];
                 System.out.println("TransmitMode");
