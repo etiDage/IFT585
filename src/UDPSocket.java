@@ -13,9 +13,9 @@ public class UDPSocket
     	ipAddr[1] = (byte)168;
     	ipAddr[2] = (byte)1;
     	ipAddr[3] = (byte)114;
-        InetAddress IPAddress = InetAddress.getByAddress(ipAddr);
-        int port = 50500;
-        int ackPort = 50501;
+        InetAddress IPAddress = InetAddress.getByName(args[2]);
+        int port = Integer.parseInt(args[3]);
+        int ackPort = Integer.parseInt(args[4]);
         int packetSize = 1024;
         Path pathToFile = Paths.get(args[1]);
         System.out.println(pathToFile.toAbsolutePath());
