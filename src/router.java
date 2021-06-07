@@ -1,7 +1,3 @@
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
-
 public class router
 {
     DatagramSocket socket;
@@ -20,4 +16,10 @@ public class router
     {
         
     }
+    
+    void Ls()
+    {
+        Pair<Integer, Integer>[] N
+    }
+    
 }
