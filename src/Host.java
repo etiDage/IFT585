@@ -16,8 +16,9 @@ public class Host
             case "1":
                 String msg = "2Hello";
                 p = msg.getBytes();
-                DatagramPacket packet = new DatagramPacket(p, p.length, InetAddress.getByName("172.0.0.2"), 50500);
+                DatagramPacket packet = new DatagramPacket(p, p.length, InetAddress.getByName("172.17.0.2"), 50500);
                 socket.send(packet);
+                System.out.println("Message sent");
                 socket.close();
                 break;
             case "2":
