@@ -35,6 +35,7 @@ public class router
         ObjectOutputStream oos = new ObjectOutputStream(outputStream);
         oos.writeObject(voisin);
         byte[] data = outputStream.toByteArray();
+        
         for (String ipString : IpRouter.keySet())
         {
         	InetAddress ip = InetAddress.getByName(ipString);
@@ -203,16 +204,28 @@ public class router
         boolean isHost2 = host2.equals(name);
         
         DatagramSocket socket = new DatagramSocket(50500);
+        Map<String, Map<String, Integer>> mapvoisins;
         switch (args[0])
         {
             case "LS":
             	System.out.println("In LS switch case.");
-                Map<String, Map<String, Integer>> mapvoisins =  startRouterLs(voisinRouter, socket);
-                Map<String, String> p = Ls(voisinRouter, name, mapvoisins, isHost1, isHost2);
+               //Map<String, Map<String, Integer>> mapvoisins =  startRouterLs(voisinRouter, socket);
+                mapvoisins =  Ls.startRouter(voisinRouter, socket, IpRouter);
+
+       //         Map<String, String> p = Ls(voisinRouter, name, mapvoisins, isHost1, isHost2);
+                Map<String, String> p = Ls.runAlgo(voisinRouter, name, mapvoisins, isHost1, isHost2, IpRouter);
+
                 receiveMsg(socket, name, p);
                 socket.close();
                 break;
             case "DV":
+                System.out.println("In LS switch case.");
+                mapvoisins = Dv.startRouter(voisinRouter, socket, IpRouter);
+                
+                Dv.runAlgo(voisinRouter, name, mapvoisins, isHost1, isHost2, IpRouter);
+                
+                
+
                 break;
 
         }
