@@ -16,7 +16,6 @@ public class Ls
             throws IOException, ClassNotFoundException, InterruptedException
     {
         Thread.sleep(2500);
-        System.out.println("Start router LS");
         
         Map<String, Map<String, Integer>> mapVoisins = new HashMap<String, Map<String, Integer>>();
         
@@ -28,7 +27,6 @@ public class Ls
         for (String ipString : IpRouter.keySet())
         {
             InetAddress ip = InetAddress.getByName(ipString);
-            System.out.println(ipString + " " + IpRouter.get(ipString));
             Thread.sleep(250);
             DatagramPacket dp = new DatagramPacket(data, data.length, ip, 50500);
             socket.send(dp);
@@ -43,21 +41,21 @@ public class Ls
         while (tableReceived < IpRouter.size())
         {
             byte[] tableb = new byte[1024];
+            
             DatagramPacket receivePacket = new DatagramPacket(tableb, tableb.length);
             socket.receive(receivePacket);
-            ByteArrayInputStream in = new ByteArrayInputStream(receivePacket.getData());
+
             InetAddress senderip = receivePacket.getAddress();
             String senderName = IpRouter.get(senderip.toString().substring(1));
-            System.out.println("Sender ip: " + senderip.toString().substring(1) );
+            
+            ByteArrayInputStream in = new ByteArrayInputStream(receivePacket.getData());            
             ObjectInputStream is = new ObjectInputStream(in);
             Map<String, Integer> v = (Map<String, Integer>) is.readObject();
+            
             mapVoisins.put(senderName, v);
             tableReceived++;
-            System.out.println("Number of table received:" + tableReceived);
         }
-               
-        mapVoisins.forEach((key, value) -> System.out.println(key + ":" + value));
-
+             
         return mapVoisins;
     }
     
@@ -66,26 +64,24 @@ public class Ls
         Map<String, Integer> D = new HashMap<String, Integer>();
         Map<String, String> p = new HashMap<String, String>();
 
-        System.out.println("Starting LS");
         
         Vector<String> N = new Vector<String>();
         N.add(name);
-        for (String routerName : IpRouter.values())
+        for (String v : IpRouter.values())
         {
-            if (voisins.get(routerName) != null)
+            if (voisins.get(v) != null)
             {
-                D.put(routerName, voisins.get(routerName));
+                D.put(v, voisins.get(v));
             }
             else
             {
-                D.put(routerName, 1000);
+                D.put(v, 1000);
             }
         }
-        System.out.println("Size de N:" + N.size());
         while (N.size() < IpRouter.size() + 1)
         {
             int min = 1000;
-            String minNode = "";
+            String w = "";
             for (String router : D.keySet())
             {
                 if(!N.contains(router))
@@ -94,37 +90,34 @@ public class Ls
                     if (val < min)
                     {
                         min = val;
-                        minNode = router;
+                        w = router;
                     }                   
                 }
             }
-            N.add(minNode);
-            if(minNode.equals("0") || minNode.equals("1"))
+            N.add(w);
+            if(w.equals("0") || w.equals("1"))
                 continue;
-            Map<String, Integer> v = mapVoisins.get(minNode);
-            System.out.println("printing v : ");
+            Map<String, Integer> voisinsW = mapVoisins.get(w);
+//            System.out.println("printing v : ");
 //            v.forEach((key, value) -> System.out.println(key + ":" + value));
 
-            for (String n : v.keySet())
+            for (String v : voisinsW.keySet())
             {
-                if(!n.equals(name))
+                if(!v.equals(name))
                 {
-                    System.out.println("N: " + n);
-                    System.out.println("minNode: " + minNode);
                     
-                    if(n.equals("0") || n.equals("1"))
+                    if(v.equals("0") || v.equals("1"))
                     {
-                        System.out.println("D: " + D.get(n));
-                        System.out.println("V: " + v.get(n));
-                        D.put(n, D.get(minNode));                       
+                        D.put(v, D.get(w));                       
                     }
                     else
                     {
-                        D.put(n, Math.min(D.get(n), D.get(minNode) + v.get(n)));                        
+                        D.put(v, Math.min(D.get(v), D.get(w) + voisinsW.get(v)));                        
                     }
                     //p.put(minNode, n);
-                    p.put(n, minNode);                  
+                    //p.putIfAbsent(n, minNode);
                 }
+                p.putIfAbsent(v, w); 
 
             }
             // update D(v) pour tout voisin de minNode(D(v) = min (D(v),
@@ -141,7 +134,9 @@ public class Ls
             p.put("1", name);
             D.put("1", 0);
         }
+        System.out.println("Table de routage: ");
         D.forEach((key, value) -> System.out.println(key + ":" + value));
+
         return p;
 
     }

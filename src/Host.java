@@ -14,7 +14,7 @@ public class Host
         switch (args[0])
         {
             case "1":
-                String msg = "1Hello";
+                String msg = "1Hello World!";
                 p = msg.getBytes();
                 DatagramPacket packet = new DatagramPacket(p, p.length, InetAddress.getByName("172.17.0.2"), 50500);
                 socket.send(packet);
@@ -23,10 +23,11 @@ public class Host
                 break;
             case "2":
                 DatagramPacket receivePacket = new DatagramPacket(p, p.length);
+                System.out.println("Waiting to receive...");
                 socket.receive(receivePacket);
                 p = receivePacket.getData();
                 String receivedMsg = new String(p);
-                System.out.println("Message Reçu: " + receivedMsg);
+                System.out.println("Message Reçu: " + receivedMsg.substring(1));
                 socket.close();
                 break;
             default:
