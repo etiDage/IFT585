@@ -156,7 +156,8 @@ public class router
         return p;
 
     }
-    static void receiveMsg(DatagramSocket socket, String name,Map<String, String> p ) throws IOException
+    static void receiveMsg(DatagramSocket socket, String name,Map<String, String> p, 
+    		boolean isHost2, InetAddress IPReceiver, Map<String, Integer> voisinRouter) throws IOException
     {
         
         byte[] pck = new byte[1024];
@@ -165,26 +166,39 @@ public class router
         System.out.println("Message reçus par le routeur " + name);
         pck = packet.getData();
         char dest = (char) pck[0];
-        sendMsg(socket, packet, String.valueOf(dest), p, name);
+        System.out.println("Destination " + dest);
+        sendMsg(socket, packet, String.valueOf(dest), p, name, isHost2, IPReceiver, voisinRouter);
         
     }
-    static void sendMsg(DatagramSocket socket, DatagramPacket packet, String dest, Map<String, String> p, String name) throws IOException
-    {
-        String prochain = "";
-        while(dest != name)
-        {
-            prochain = dest;
-            dest = p.get(dest);
-        }
+    static void sendMsg(DatagramSocket socket, DatagramPacket packet, String dest, Map<String, String> p, 
+    		String name, boolean isHost2, InetAddress IPReceiver, Map<String, Integer> voisinRouter) throws IOException
+    { 
         InetAddress destIp = null;        
-        for (Entry<String, String> entry: IpRouter.entrySet())
-        {
-            if(Objects.equals(prochain, entry.getValue()))
-            {   
-                destIp = InetAddress.getByName(entry.getKey());   
-            }
-        }
 
+    	if(isHost2)
+    	{
+    		destIp = IPReceiver;
+    	}
+    	else 
+    	{
+            p.forEach((key, value) -> System.out.println(key + ":" + value));
+
+            String prochain = "";
+            while(!voisinRouter.containsKey(dest))
+            {
+                dest = p.get(dest);
+                prochain = dest;
+            }
+            System.out.println("Prochain: " + prochain);
+            for (Entry<String, String> entry: IpRouter.entrySet())
+            {
+                if(Objects.equals(prochain, entry.getValue()))
+                {   
+                    destIp = InetAddress.getByName(entry.getKey());   
+                }
+            }    		
+    	}
+        
         packet.setAddress(destIp);
         socket.send(packet);
         
@@ -202,6 +216,7 @@ public class router
         String host2 = args[2];
         boolean isHost1 = host1.equals(name);
         boolean isHost2 = host2.equals(name);
+        InetAddress IPReceiver = InetAddress.getByName(args[3]);
         
         DatagramSocket socket = new DatagramSocket(50500);
         Map<String, Map<String, Integer>> mapvoisins;
@@ -215,7 +230,7 @@ public class router
        //         Map<String, String> p = Ls(voisinRouter, name, mapvoisins, isHost1, isHost2);
                 Map<String, String> p = Ls.runAlgo(voisinRouter, name, mapvoisins, isHost1, isHost2, IpRouter);
 
-                receiveMsg(socket, name, p);
+                receiveMsg(socket, name, p, isHost2, IPReceiver, voisinRouter);
                 socket.close();
                 break;
             case "DV":

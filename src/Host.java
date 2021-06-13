@@ -14,7 +14,7 @@ public class Host
         switch (args[0])
         {
             case "1":
-                String msg = "2Hello";
+                String msg = "1Hello";
                 p = msg.getBytes();
                 DatagramPacket packet = new DatagramPacket(p, p.length, InetAddress.getByName("172.17.0.2"), 50500);
                 socket.send(packet);
@@ -25,7 +25,7 @@ public class Host
                 DatagramPacket receivePacket = new DatagramPacket(p, p.length);
                 socket.receive(receivePacket);
                 p = receivePacket.getData();
-                String receivedMsg = p.toString().substring(1);
+                String receivedMsg = new String(p);
                 System.out.println("Message Reçu: " + receivedMsg);
                 socket.close();
                 break;
