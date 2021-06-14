@@ -33,11 +33,6 @@ public class Ls
         }
         
         int tableReceived = 0;
-        /*
-         * ByteArrayOutputStream receiveOutputStream = new
-         * ByteArrayOutputStream(); ObjectOutputStream roos = new
-         * ObjectOutputStream(receiveOutputStream);
-         */
         while (tableReceived < IpRouter.size())
         {
             byte[] tableb = new byte[1024];
@@ -59,7 +54,9 @@ public class Ls
         return mapVoisins;
     }
     
-    static Map<String, String> runAlgo(Map<String, Integer> voisins, String name, Map<String, Map<String, Integer>> mapVoisins, boolean isHost1, boolean isHost2, Map <String, String> IpRouter)
+    static Map<String, String> runAlgo(Map<String, Integer> voisins, String name, Map<String, 
+    		Map<String, Integer>> mapVoisins, boolean isHost1, boolean isHost2, 
+    		Map <String, String> IpRouter)
     {
         Map<String, Integer> D = new HashMap<String, Integer>();
         Map<String, String> p = new HashMap<String, String>();
@@ -98,8 +95,6 @@ public class Ls
             if(w.equals("0") || w.equals("1"))
                 continue;
             Map<String, Integer> voisinsW = mapVoisins.get(w);
-//            System.out.println("printing v : ");
-//            v.forEach((key, value) -> System.out.println(key + ":" + value));
 
             for (String v : voisinsW.keySet())
             {
@@ -114,14 +109,14 @@ public class Ls
                     {
                         D.put(v, Math.min(D.get(v), D.get(w) + voisinsW.get(v)));                        
                     }
-                    //p.put(minNode, n);
-                    //p.putIfAbsent(n, minNode);
+                    
+                    System.out.println("D Updated:");
+                    D.forEach((key, value) -> System.out.println(key + ":" + value));
+
                 }
                 p.putIfAbsent(v, w); 
 
             }
-            // update D(v) pour tout voisin de minNode(D(v) = min (D(v),
-            // D(routeur) + c(w, min))
         }
         
         if(isHost1)
@@ -134,7 +129,7 @@ public class Ls
             p.put("1", name);
             D.put("1", 0);
         }
-        System.out.println("Table de routage: ");
+        System.out.println("Table de routage finale: ");
         D.forEach((key, value) -> System.out.println(key + ":" + value));
 
         return p;

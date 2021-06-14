@@ -140,7 +140,9 @@ public class Dv
                                 
                 //Update DV
                 DV.put(senderName, DvReceived);
-                
+                System.out.println("DV Updated: ");
+            	DV.forEach((key, value) -> System.out.println(key + ":" + value));
+
                 for(String y : N)
                 {
                 	if(!y.equals(senderName))
@@ -160,12 +162,12 @@ public class Dv
     		}
     		catch(SocketTimeoutException e)
     		{
-    			System.out.println("Exception received: " + e);
     			timeout = true;
     		}
     	}
     	
     	System.out.println("Routeur stable");
+    	System.out.println("Table de routage finale.");
     	DV.forEach((key, value) -> System.out.println(key + ":" + value));
     	return DV;
     	
@@ -222,6 +224,7 @@ public class Dv
     		String name, boolean isHost2, InetAddress IPReceiver, Map <String, String> IpRouter) throws IOException
     {
         InetAddress destIp = null;        
+    	String nextToSend = "";
 
     	if(isHost2)
     	{
@@ -230,7 +233,6 @@ public class Dv
     	else
     	{
         	int bestCostToSend = 1000;
-        	String nextToSend = "";
         	for(String voisin : DV.keySet())
         	{
         		if(DV.get(voisin).get(dest) < bestCostToSend)
@@ -248,7 +250,7 @@ public class Dv
                 }
             }    
     	}
-        
+        System.out.println("Prochain: " + nextToSend);
         packet.setAddress(destIp);
         socket.send(packet);
  
