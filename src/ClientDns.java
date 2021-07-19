@@ -15,9 +15,15 @@ public class ClientDns
     static int port = 53;
     public static void main(String args[]) throws IOException
     {
-        String domain = "usherbrooke.ca";
-        InetAddress ipAddress = InetAddress.getByName(DnsServerAddress);
-
+        String SearchedDomain = "www.usherbrooke.ca";
+        InetAddress DnsServeripAddress = InetAddress.getByName(DnsServerAddress);
+        
+        String domainAddress = DNSRequest(SearchedDomain, DnsServeripAddress);
+        System.out.println("domain Address: " + domainAddress);
+    }
+    
+    public static String DNSRequest(String SearchedDomain,InetAddress DnsServeripAddress ) throws IOException
+    {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(byteArrayOutputStream);
         
@@ -42,8 +48,8 @@ public class ClientDns
         dos.writeShort(0x0000);
         
         
-        String[] part = domain.split("\\.");
-        System.out.println(domain + " has " + part.length + " parts");
+        String[] part = SearchedDomain.split("\\.");
+        System.out.println(SearchedDomain + " has " + part.length + " parts");
 
         
         for(String labels : part)
@@ -66,7 +72,7 @@ public class ClientDns
         byte[] DNSQuery = byteArrayOutputStream.toByteArray();
         
         DatagramSocket socket = new DatagramSocket();
-        DatagramPacket DNSQueryPacket = new DatagramPacket(DNSQuery, DNSQuery.length, ipAddress, port);
+        DatagramPacket DNSQueryPacket = new DatagramPacket(DNSQuery, DNSQuery.length, DnsServeripAddress, port);
         socket.send(DNSQueryPacket);
         
         
@@ -109,13 +115,12 @@ public class ClientDns
         short addrLen = inputStream.readShort();
         System.out.println("Len: 0x" + String.format("%x", addrLen));
 
-        System.out.print("Address: ");
         String address = "";
         for (int i = 0; i < addrLen; i++ ) {
             address += String.format("%d", (inputStream.readByte()& 0xFF)) + ".";
         }
         address = address.substring(0, address.length() - 1);
-        System.out.print("\n" + address);
-
+        return address;
     }
+    
 }
