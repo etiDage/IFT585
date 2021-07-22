@@ -1,28 +1,90 @@
 
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class ClientDns
 {
-    static String DnsServerAddress = "8.8.8.8";
-    static String DomainName = "www.google.com";
     static int port = 53;
     public static void main(String args[]) throws IOException
     {
-        String SearchedDomain = "www.usherbrooke.ca";
-        InetAddress DnsServeripAddress = InetAddress.getByName(DnsServerAddress);
+    	byte[] ipAddr = new byte[] {8, 8, 8, 8};
+        InetAddress DnsServerIPAddress = InetAddress.getByAddress(ipAddr);
+    
+        String SearchedDomain = "ajtadou.com";
+        String htmlFilePath = "/accueil.html";
         
-        String domainAddress = DNSRequest(SearchedDomain, DnsServeripAddress);
-        System.out.println("domain Address: " + domainAddress);
+        InetAddress domainAddress = DNSRequest(SearchedDomain, DnsServerIPAddress);
+        System.out.println("domain Address: " + domainAddress.toString());
+        
+        ArrayList<String> response = HttpGetRequest(domainAddress, SearchedDomain, htmlFilePath);
+        
+        System.out.println("Status of request:\n" + response.get(0));
+                
+        String htmlContent = "";
+        
+        int htmlStartIndex = 0;
+        
+        for(String line : response)
+        {
+        	if(line.contains("<html>") || line.contains("<HTML>"))
+        	{
+        		htmlStartIndex = response.indexOf(line);
+        		break;
+        	}
+        }
+        
+        for(int i = htmlStartIndex; i < response.size(); i++)
+        {
+        	htmlContent += response.get(i) + "\n";
+        }
+        
+        System.out.println("HTML CONTENT:\n\n" + htmlContent);
+        
+        Document htmlDoc = Jsoup.parse(htmlContent);
+        
+        Elements imgTags = htmlDoc.getElementsByTag("img");
+        
+        ArrayList<String> imageResponse = new ArrayList<String>();
+        
+        System.out.println("Requesting images:\n\n");
+        
+        for(Element img : imgTags)
+        {
+        	String imgPath = "/" + img.attr("src");
+        	HttpGetImageRequest(domainAddress, SearchedDomain, imgPath);
+        }
+                
     }
     
-    public static String DNSRequest(String SearchedDomain,InetAddress DnsServeripAddress ) throws IOException
+    public static InetAddress DNSRequest(String SearchedDomain,InetAddress DnsServeripAddress ) throws IOException
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(byteArrayOutputStream);
@@ -115,12 +177,130 @@ public class ClientDns
         short addrLen = inputStream.readShort();
         System.out.println("Len: 0x" + String.format("%x", addrLen));
 
-        String address = "";
+        ByteArrayOutputStream domainAddressOutput = new ByteArrayOutputStream();
+
         for (int i = 0; i < addrLen; i++ ) {
-            address += String.format("%d", (inputStream.readByte()& 0xFF)) + ".";
+            domainAddressOutput.write(inputStream.readByte()& 0xFF);
         }
-        address = address.substring(0, address.length() - 1);
-        return address;
+        byte[] byteAdr = domainAddressOutput.toByteArray();
+
+        InetAddress address = InetAddress.getByAddress(byteAdr);
+        return address;    
+    }
+    
+    public static ArrayList<String> HttpGetRequest(InetAddress address, String domainName, String filePath) throws IOException
+    {
+    	Socket socket = new Socket(address, 80);
+    	PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
+    	printWriter.println("GET " + filePath + " HTTP/1.1");
+    	printWriter.println("Host: " + domainName);
+    	printWriter.println("Connection: close");
+    	printWriter.println("User-agent: Mozilla/5.0");
+    	printWriter.println("Accept: text/html, image/gif, image/jpeg, image/tiff");
+    	printWriter.println("Accept-language:fr");
+    	printWriter.println("");
+    	printWriter.flush();
+    	BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+    	ArrayList<String> response = new ArrayList<String>();
+    	String line;
+    	
+    	while((line = br.readLine()) != null) 
+    	{
+    		response.add(line);
+    	}
+    	
+    	br.close();
+    	socket.close();
+    	
+    	return response;
+    }
+    
+    public static void HttpGetImageRequest(InetAddress address, String domainName, String filePath) throws IOException
+    {
+    	Socket socket = new Socket(address, 80);
+    	PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
+    	printWriter.println("GET " + filePath + " HTTP/1.1");
+    	printWriter.println("Host: " + domainName);
+    	printWriter.println("Connection: close");
+    	printWriter.println("User-agent: Mozilla/5.0");
+    	printWriter.println("Accept: text/html, image/gif, image/jpeg, image/tiff");
+    	printWriter.println("Accept-language:fr");
+    	printWriter.println("");
+    	printWriter.flush();
+    	
+    	String[] tempArray = filePath.split("/");
+    	String imgName = tempArray[tempArray.length - 1];
+    	
+		OutputStream fileos = new FileOutputStream(imgName);
+		ByteArrayOutputStream os = new ByteArrayOutputStream();		
+    	InputStream is = socket.getInputStream();
+    	    	    
+    	byte[] b = new byte[2048];
+    	int length;
+    	
+    	while((length = is.read(b)) != -1)
+    	{
+    		os.write(b, 0, length);
+    	}
+    	
+    	byte[] fileContent = os.toByteArray();
+    	
+    	String[] ctnArray = new String(fileContent).split("\n");
+    	
+    	int contentLength = 0;
+    	
+    	for(String line : ctnArray)
+    	{
+    		if(line.contains("Content-Length:"))
+    		{
+    			Pattern ptrn = Pattern.compile("[0-9]+");
+    			
+    			Matcher m = ptrn.matcher(line);
+    			
+    			if(m.find())
+    			{
+    				contentLength = Integer.parseInt(m.group());
+    			}
+    		}
+    	}
+    	
+    	int sizeToChop = fileContent.length - contentLength;
+    	
+    	fileos.write(Arrays.copyOfRange(fileContent, sizeToChop, fileContent.length));
+    	
+    	is.close();
+    	os.close();
+    	fileos.close();
+    	socket.close();
+    	
+    }
+
+    
+    public static void SaveImageFromHttpResponse(ArrayList<String> response, String imgPath) throws IOException
+    {
+    	String[] tempArray = imgPath.split("/");
+    	String imgName = tempArray[tempArray.length - 1];
+    	String imgContent = "";
+    	int imgStartIndex = 0;
+    	
+    	for(String line : response)
+    	{
+    		if(line.equals(""))
+    		{
+    			imgStartIndex = response.indexOf(line) + 1;
+    			System.out.println(imgStartIndex);
+    			break;
+    		}
+    	}
+
+		OutputStream os = new FileOutputStream(imgName);
+    	
+    	for(int i = imgStartIndex; i < response.size(); i++)
+    	{
+    	}
+    	
+//		byte[] content = imgContent.getBytes();
+//		os.close();
     }
     
 }
