@@ -38,8 +38,12 @@ public class ClientDns
     	byte[] ipAddr = new byte[] {8, 8, 8, 8};
         InetAddress DnsServerIPAddress = InetAddress.getByAddress(ipAddr);
     
-        String SearchedDomain = "ajtadou.com";
-        String htmlFilePath = "/accueil.html";
+        String SearchedDomain = args[0];
+        String htmlFilePath = "";
+        if(args.length > 1)
+        {
+            htmlFilePath = args[1];
+        }
         
         InetAddress domainAddress = DNSRequest(SearchedDomain, DnsServerIPAddress);
         System.out.println("domain Address: " + domainAddress.toString());
@@ -72,7 +76,6 @@ public class ClientDns
         
         Elements imgTags = htmlDoc.getElementsByTag("img");
         
-        ArrayList<String> imageResponse = new ArrayList<String>();
         
         System.out.println("Requesting images:\n\n");
         
@@ -93,7 +96,6 @@ public class ClientDns
         dos.writeShort(0x0837);
         
         //WriteFlag
-        //https://courses.cs.duke.edu//fall16/compsci356/DNS/DNS-primer.pdf
         //only one = RD
         dos.writeShort(0x0100);
         
@@ -111,13 +113,10 @@ public class ClientDns
         
         
         String[] part = SearchedDomain.split("\\.");
-        System.out.println(SearchedDomain + " has " + part.length + " parts");
 
         
         for(String labels : part)
         {
-            System.out.println("Writing: " + labels);
-
             byte[] byteLabel = labels.getBytes();
             dos.write(byteLabel.length);
             dos.write(byteLabel);
@@ -131,16 +130,20 @@ public class ClientDns
         //Write QClass 1 = Internet Adresses 
         dos.writeShort(0x0001);
         
-        byte[] DNSQuery = byteArrayOutputStream.toByteArray();
+        byte[] DNSRequest = byteArrayOutputStream.toByteArray();
         
+        //Send request to DNS server
+        System.out.println("Sending Request for " + SearchedDomain);
         DatagramSocket socket = new DatagramSocket();
-        DatagramPacket DNSQueryPacket = new DatagramPacket(DNSQuery, DNSQuery.length, DnsServeripAddress, port);
-        socket.send(DNSQueryPacket);
+        DatagramPacket DNSRequestPacket = new DatagramPacket(DNSRequest, DNSRequest.length, DnsServeripAddress, port);
+        socket.send(DNSRequestPacket);
         
-        
+        System.out.println("Receiving answer from Dns Server");
+
         byte[] receivePckData = new byte[1024];
         DatagramPacket packet = new DatagramPacket(receivePckData, receivePckData.length);
         socket.receive(packet);
+        socket.close();
         
         //print header
         DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(receivePckData));
@@ -266,6 +269,7 @@ public class ClientDns
     	
     	int sizeToChop = fileContent.length - contentLength;
     	
+    	System.out.println("Saving Image: " + imgName);
     	fileos.write(Arrays.copyOfRange(fileContent, sizeToChop, fileContent.length));
     	
     	is.close();
@@ -274,33 +278,4 @@ public class ClientDns
     	socket.close();
     	
     }
-
-    
-    public static void SaveImageFromHttpResponse(ArrayList<String> response, String imgPath) throws IOException
-    {
-    	String[] tempArray = imgPath.split("/");
-    	String imgName = tempArray[tempArray.length - 1];
-    	String imgContent = "";
-    	int imgStartIndex = 0;
-    	
-    	for(String line : response)
-    	{
-    		if(line.equals(""))
-    		{
-    			imgStartIndex = response.indexOf(line) + 1;
-    			System.out.println(imgStartIndex);
-    			break;
-    		}
-    	}
-
-		OutputStream os = new FileOutputStream(imgName);
-    	
-    	for(int i = imgStartIndex; i < response.size(); i++)
-    	{
-    	}
-    	
-//		byte[] content = imgContent.getBytes();
-//		os.close();
-    }
-    
 }
