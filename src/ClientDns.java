@@ -149,10 +149,10 @@ public class ClientDns
         DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(receivePckData));
         System.out.println("Transaction ID: 0x" + String.format("%x", inputStream.readShort()));
         System.out.println("Flags: 0x" + String.format("%x", inputStream.readShort()));
-        System.out.println("Questions: 0x" + String.format("%x", inputStream.readShort()));
-        System.out.println("Reponses: 0x" + String.format("%x", inputStream.readShort()));
-        System.out.println("NScount: 0x" + String.format("%x", inputStream.readShort()));
-        System.out.println("ARcount: 0x" + String.format("%x", inputStream.readShort()));
+        System.out.println("Query: 0x" + String.format("%x", inputStream.readShort()));
+        System.out.println("Answer: 0x" + String.format("%x", inputStream.readShort()));
+        System.out.println("Authority Record: 0x" + String.format("%x", inputStream.readShort()));
+        System.out.println("Aditional record: 0x" + String.format("%x", inputStream.readShort()));
         
         
         int namePartLen = 0;
